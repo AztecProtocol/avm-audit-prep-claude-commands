@@ -1,0 +1,7 @@
+# Ignore markdown files that don't start with 'avm'
+*.md
+!avm*.md
+!README.md
+
+*.sh
+!avm*.sh

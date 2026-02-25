@@ -1,11 +1,15 @@
 ---
 name: avm-pil-check-docu-interactions
 description: Audit PIL interaction documentation — usage patterns, tuple completeness, selector choices, and input/output clarity.
-allowed-tools: Read, Glob, Grep, Task
+allowed-tools: Read, Glob, Grep, Task, Edit
 ---
 # [DOCU_INTERACTIONS] — PIL Interaction Documentation Audit
 
 Given the PIL file `$ARGUMENTS`, audit the documentation of every interaction (lookup/permutation) where this component appears as a destination.
+
+## Fix mode
+
+If the first word of `$ARGUMENTS` is `fix`, remove it from the arguments and enable **fix mode**. In fix mode, after completing the audit, automatically apply all suggested fixes using the Edit tool. Do not ask for confirmation — just apply them all.
 
 ## Procedure
 

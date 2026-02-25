@@ -1,11 +1,15 @@
 ---
 name: avm-pil-check-docu-main
 description: Audit PIL file top-level documentation — trace shape, errors, preconditions, destination components, and examples.
-allowed-tools: Read, Glob, Grep, Task
+allowed-tools: Read, Glob, Grep, Task, Edit
 ---
 # [DOCU_MAIN] — PIL Main Documentation Audit
 
 Given the PIL file `$ARGUMENTS`, audit that the file's header documentation is complete and accurate.
+
+## Fix mode
+
+If the first word of `$ARGUMENTS` is `fix`, remove it from the arguments and enable **fix mode**. In fix mode, after completing the audit, automatically apply all suggested fixes using the Edit tool. Do not ask for confirmation — just apply them all.
 
 ## Procedure
 

@@ -1,11 +1,15 @@
 ---
 name: avm-cpp-check-headers
 description: Audit C++ includes for unused, missing (transitive), and redundant imports following the project's include rules.
-allowed-tools: Read, Glob, Grep, Task
+allowed-tools: Read, Glob, Grep, Task, Edit
 ---
 # [CPP_HEADERS] — C++ Include Audit
 
 Given the file(s) `$ARGUMENTS`, audit the `#include` directives for correctness.
+
+## Fix mode
+
+If the first word of `$ARGUMENTS` is `fix`, remove it from the arguments and enable **fix mode**. In fix mode, after completing the audit, automatically apply all suggested fixes using the Edit tool. Do not ask for confirmation — just apply them all.
 
 ## Rules recap
 

@@ -10,7 +10,7 @@ Apply the following formatting rules to the PIL file specified by `$ARGUMENTS`. 
 ## File Structure (top to bottom)
 
 1. **Includes** at the very top, one per line, alphabetical within groups (relative paths first, then deeper paths).
-2. **File-level block comment** (`/** ... */` or `//` block) describing the gadget. Use uppercase labels for each section, following the alu.pil convention. The sections are, in order:
+2. **File-level block comment** using `/** ... */` (Javadoc/doxygen style, with ` * ` line prefixes) describing the gadget. Do NOT use `//` line comments for the file header — always use the `/** ... */` block style. Use uppercase labels for each section, following the alu.pil convention. The sections are, in order:
    - **Purpose** (no label needed, just the opening paragraph).
    - **`PRECONDITIONS:`** — What the caller must guarantee about the inputs.
    - **`USAGE:`** — Show the actual lookup syntax callers should use (see "Usage / Lookup Documentation" below).
@@ -47,11 +47,12 @@ Use one of these styles consistently within a file:
 These rules apply **everywhere** a lookup or permutation appears — both in actual PIL code and in USAGE documentation comments.
 
 - **Lookups** use `in`, **permutations** use `is`.
-- For short lookups/permutations (3 or fewer columns), keep on one or two lines:
+- Short lookups/permutations (3 or fewer columns) may be kept on one or two lines:
   ```
   selector { col_a, col_b } in destination.sel { destination.col_a, destination.col_b };
   ```
-- For longer lookups (4+ columns), put `in` or `is` on its own line, and list columns vertically with one per line:
+- For longer lookups (4+ columns), put `in` or `is` on its own line, and list columns vertically with one per line.
+- **Never collapse**: If a lookup is already formatted as multi-line, leave it multi-line even if it has 3 or fewer columns. Multi-line is always acceptable; only expand short-to-long when needed, never collapse long-to-short.
   ```
   selector {
       col_a,
@@ -81,16 +82,16 @@ In the file-level comment's USAGE section, show each lookup that callers use to 
 
 Example (short lookup, from ff_gt.pil):
 ```
- // USAGE:
- //
- // sel_caller { a, b, result }
- // in
- // ff_gt.sel_gt { ff_gt.a, ff_gt.b, ff_gt.result };
- //
- // - Inputs: Any field elements a and b (no preconditions required).
- // - Output: `result` is constrained to be boolean (1 if a > b, 0 otherwise).
- // - Selector: Use `sel_gt` for the lookup.
- // - Trace size: Consumes 5 rows.
+ * USAGE:
+ *
+ * sel_caller { a, b, result }
+ * in
+ * ff_gt.sel_gt { ff_gt.a, ff_gt.b, ff_gt.result };
+ *
+ * - Inputs: Any field elements a and b (no preconditions required).
+ * - Output: `result` is constrained to be boolean (1 if a > b, 0 otherwise).
+ * - Selector: Use `sel_gt` for the lookup.
+ * - Trace size: Consumes 5 rows.
 ```
 
 Example (long lookup, from alu.pil):
@@ -111,6 +112,7 @@ When a gadget has multiple entry points (e.g., `sel_gt` and `sel_dec`), document
 ## Comments
 
 - **Explain why**, not just what. Every constraint should have a comment explaining what property it enforces and why it is correct/needed unless it is immediately obvious.
+- **Link recipe docs for standard idioms**: When using the zero check recipe / error-setting idiom (`x * (e * (1 - y) + y) - 1 + e = 0`), add a link to the recipe: `// See https://hackmd.io/moq6viBpRJeLpWrHAogCZw#With-Error-Support.` (see `addressing.pil` for the established convention).
 - Document **preconditions** for lookups into other gadgets (e.g., "gt gadget requires both inputs bounded by 2^128").
 - Document **deactivation cascades**: when `sel == 0` implies other selectors are 0, explain the chain.
 - Use `// Note that ...` or `// Observe that ...` for non-obvious logical deductions.
@@ -118,14 +120,52 @@ When a gadget has multiple entry points (e.g., `sel_gt` and `sel_dec`), document
 
 ## Constraint Scenario Documentation
 
-When a constraint handles multiple cases (e.g., different selector values or modes), document each scenario as non-indented `//` comments before the constraint label. Use one of these patterns:
+When a constraint handles multiple cases (e.g., different selector values, modes, or opcodes), document each scenario in `//` comments before the constraint label. Use the pattern that best fits the complexity:
 
-- `// When X = 1, we enforce that ...` (preferred for if/else branching on a selector)
-- `// For add, sel_op_add - sel_op_sub = 1 ==> check a + b - cf * 2^(max_bits) = c` (for per-opcode summaries)
+### Simple two-case branching (gt.pil style)
+For constraints that split on a boolean selector, use inline "When X = Y" comments:
+```
+// When res = 1, GT_RESULT constrains abs_diff = a - b - 1.
+// When res = 0, GT_RESULT constrains abs_diff = b - a.
+#[GT_RESULT]
+sel * ( (A_GT_B - A_LTE_B) * res + A_LTE_B - abs_diff ) = 0;
+```
 
-Do **not** use indented bullet-style comments (`//     When X = 1, ...`). Keep them flush with the surrounding `//` comments. Use `==>` for logical implication within a line.
+### Equivalence assertions (bitwise.pil style)
+For is-zero idioms and boolean equivalences, use `<==>`:
+```
+// When start = 1: tag_a == 0 <==> sel_tag_ff_err = 1
+#[INPUT_TAG_CANNOT_BE_FF]
+start * (TAG_A_DIFF * (sel_tag_ff_err * (1 - tag_a_inv) + tag_a_inv) - 1 + sel_tag_ff_err) = 0;
+```
 
-After listing the per-case behavior, add a brief summary of how the cases combine to enforce the overall property (e.g., "Together these constrain res to be 1 iff a > b.").
+### Numbered error/case lists (alu.pil style)
+For consolidated selectors or multi-error paths, use a `/** */` block with numbered cases:
+```
+/**
+ * sel_err is the main consolidated error selector.
+ * Three base error cases:
+ * 1) FF_TAG_ERR: Input tagged as a field for NOT, DIV, SHL, SHR ...
+ * 2) sel_ab_tag_mismatch: Mismatched tags for inputs a and b ...
+ * 3) sel_div_0_err: occurs when DIV or FDIV is performed and b == 0.
+ */
+```
+
+### Deep correctness proofs (ff_gt.pil style)
+For non-trivial algebraic properties that need full case analysis, use hierarchical numbering `(1)(a)(i)`:
+```
+// (1) Assume a proof satisfies the constraints for LTE(x,y,1), i.e., x <= y
+//    (a) We do not swap the operands, so a = x and b = y,
+//    (b) IS_GT = 1 - ic = 0
+//    ...
+//     (i)  borrow == 0 ==> y_lo >= x_lo && y_hi >= x_hi
+//     (ii) borrow == 1 ==> y_hi >= x_hi + 1 ==> y_hi > x_hi
+```
+
+### General guidelines
+- Use `==>` for logical implication within a line.
+- After listing per-case behavior, add a brief summary of how the cases combine to enforce the overall property.
+- Match the depth of documentation to the complexity of the constraint — a simple two-case branch needs two lines, not a full proof.
 
 ## Lookup Sub-selectors
 
@@ -136,8 +176,8 @@ When a gadget exposes multiple sub-selectors for lookup (e.g., `sel_sha256`, `se
 
 ## Error Handling Documentation
 
-At the end of the file-level block comment (or in its own section), document error handling:
-- If the gadget has no errors: `// Error handling: This gadget does not have error conditions.`
+Document error handling inside the file-level `/** ... */` block comment under the `ERROR HANDLING:` section:
+- If the gadget has no errors: `ERROR HANDLING: This gadget does not have error conditions.`
 - If it does: list the error types, how they're flagged, and how they interact with the caller's error handling.
 
 ## Misc

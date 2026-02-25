@@ -25,7 +25,6 @@ For each committed column `col`, search the PIL file body for references to `col
 - An intermediate expression that is itself used in a constraint (e.g., `pol X = col + 1;` where `X` appears in a constraint).
 - A lookup or permutation tuple (source or destination side).
 - A selector position in a lookup or permutation.
-- The `#[skippable_if]` directive.
 
 A column is **NOT used** if it only appears in:
 - Its own `pol commit` declaration.

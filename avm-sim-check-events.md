@@ -1,11 +1,15 @@
 ---
 name: avm-sim-check-events
 description: Audit simulation event emission — initialization, construction style, and interaction completeness across all code paths.
-allowed-tools: Read, Glob, Grep, Task
+allowed-tools: Read, Glob, Grep, Task, Edit
 ---
 # [EVENT_INIT] [EMIT_EXPLICIT_EVENT] [INTERACTION_EVENTS] — Simulation Event Emission Audit
 
 Given the file(s) `$ARGUMENTS`, audit how the simulation gadget constructs and emits events, checking initialization safety, construction style, and interaction event completeness across all code paths.
+
+## Fix mode
+
+If the first word of `$ARGUMENTS` is `fix`, remove it from the arguments and enable **fix mode**. In fix mode, after completing the audit, automatically apply all fixable issues using the Edit tool (e.g., adding missing default initializers to event struct fields). Do not ask for confirmation — just apply them all. Note: [INTERACTION_EVENTS] issues are not auto-fixable and should only be reported.
 
 ## Procedure
 

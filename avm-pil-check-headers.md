@@ -1,11 +1,15 @@
 ---
 name: avm-pil-check-headers
 description: Check that PIL file includes are all required and avoid indirect/transitive imports.
-allowed-tools: Read, Glob, Grep
+allowed-tools: Read, Glob, Grep, Edit
 ---
 # [HEADERS_SANITY] — PIL Include Audit
 
 Given the PIL file `$ARGUMENTS`, audit that every `include` directive is required and that the file does not rely on transitive includes.
+
+## Fix mode
+
+If the first word of `$ARGUMENTS` is `fix`, remove it from the arguments and enable **fix mode**. In fix mode, after completing the audit, automatically apply all suggested fixes using the Edit tool. Do not ask for confirmation — just apply them all.
 
 ## Procedure
 

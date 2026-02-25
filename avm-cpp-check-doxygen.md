@@ -1,13 +1,17 @@
 ---
 name: avm-cpp-check-doxygen
 description: Audit doxygen annotations on C++ functions/methods in simulation and tracegen files. Check completeness of briefs, params, returns, exceptions, preconditions, and event flavors.
-allowed-tools: Read, Glob, Grep, Task
+allowed-tools: Read, Glob, Grep, Task, Edit
 ---
 # [DOCU_FUNCTIONS] — Doxygen Annotation Audit
 
 Given the file(s) `$ARGUMENTS`, audit every function and method for complete doxygen documentation.
 
 This check applies both standalone (for functions not part of a specific component) and as a sub-task within per-component audits.
+
+## Fix mode
+
+If the first word of `$ARGUMENTS` is `fix`, remove it from the arguments and enable **fix mode**. In fix mode, after completing the audit, automatically apply all suggested fixes using the Edit tool. Do not ask for confirmation — just apply them all.
 
 ## Procedure
 

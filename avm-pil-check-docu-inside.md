@@ -1,11 +1,15 @@
 ---
 name: avm-pil-check-docu-inside
 description: Audit inline PIL comments for non-trivial steps, underconstrained columns, and potential footguns.
-allowed-tools: Read, Glob, Grep, Task
+allowed-tools: Read, Glob, Grep, Task, Edit
 ---
 # [DOCU_INSIDE] — PIL Inline Comments Audit
 
 Given the PIL file `$ARGUMENTS`, audit that inline comments are present for every non-trivial step, underconstrained column, and potential footgun.
+
+## Fix mode
+
+If the first word of `$ARGUMENTS` is `fix`, remove it from the arguments and enable **fix mode**. In fix mode, after completing the audit, automatically apply all suggested fixes using the Edit tool. Do not ask for confirmation — just apply them all.
 
 ## Procedure
 
@@ -18,9 +22,11 @@ Read the entire PIL file. For each section of constraints, check the criteria be
 For each constraint or group of constraints, assess whether the logic is self-evident:
 - **Trivial**: Simple boolean constraint (`col * (1 - col) = 0`), basic selector implication — no comment needed.
 - **Non-trivial**: Algebraic tricks, conditional expressions using selector multiplication, multi-row constraints with shifts, polynomial identities that encode a specific property. These **must** have a comment explaining **why** the constraint works, not just **what** it does.
+- **Zero check recipe / error-setting idiom**: Constraints using the standard `x * (e * (1 - y) + y) - 1 + e = 0` pattern (where `e = 1 iff x = 0`) **must** include a link to the recipe doc: `// See https://hackmd.io/moq6viBpRJeLpWrHAogCZw#With-Error-Support.` This is the codebase convention (see `addressing.pil` for reference). The comment should appear on the line before the constraint label.
 
 Flag if:
 - **MISSING COMMENT ON NON-TRIVIAL CONSTRAINT**: A complex constraint lacks an explanatory comment.
+- **MISSING RECIPE LINK ON ZERO CHECK**: A zero check / error-setting constraint lacks the HackMD recipe link.
 
 ### 3. Check: underconstrained columns are documented
 

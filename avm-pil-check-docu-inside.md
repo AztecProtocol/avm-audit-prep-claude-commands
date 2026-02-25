@@ -29,6 +29,7 @@ A column is "underconstrained" if it is not constrained on every active row. Com
 - A column that is free (unconstrained) on inactive rows.
 - A column constrained only via an interaction (lookup/permutation) but not by local relations.
 - A column that is constrained conditionally (e.g., only when `sel = 1`).
+- **Multiplicative factor pattern**: A relation of the form `col_1 * (col_2 ...)` only constrains `col_2` when `col_1 != 0`. If `col_2` is later reused outside of `col_1`'s guard, it may be underconstrained. This is safe only if `col_2` is separately constrained when `col_1 == 0` (e.g., via a complementary relation `(1 - col_1) * (col_2 ...)` and `col_1` is boolean). **Example**: `start * (error - sel_limbs_is_zero) = 0` constrains `error` only when `start == 1`. If a later relation `(1 - error) * (1 - write) = 0` uses `error` unconditionally, then on rows where `start == 0`, `error` is free and a malicious prover could set `write == 0` even though no error was defined on the corresponding `start == 1` row.
 
 For each such column, verify there is a comment explaining:
 - **On which rows the column is constrained** (e.g., "only constrained when sel = 1").
